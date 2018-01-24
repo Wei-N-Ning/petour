@@ -66,12 +66,29 @@ def _patch_free_func(module_obj, free_function_name):
         with ctx:
             return f(*args, **kwargs)
 
-    callable_orig.__code__ = wrapper.func_code
+    payload = wrapper.__code__
+    _c_ = types.CodeType(
+        payload.co_argcount,
+        payload.co_nlocals,
+        payload.co_stacksize,
+        payload.co_flags,
+        payload.co_code,
+        payload.co_consts,
+        payload.co_names,
+        payload.co_varnames,
+        payload.co_filename,
+        payload.co_name,
+        payload.co_firstlineno,
+        payload.co_lnotab,
+        __.__code__.co_freevars,
+        payload.co_cellvars
+    )
+    callable_orig.__code__ = _c_
 
     pt = Petour(module_obj, __, free_function_name, name_backup)
     ctx = NullContextManager()
     record = [pt, ctx]
-    __mapping[wrapper.__code__] = record
+    __mapping[_c_] = record
     return record
 
 
@@ -106,7 +123,24 @@ def _patch_method(module_obj, class_dot_method):
         with ctx:
             return f(*args, **kwargs)
 
-    callable_orig.__code__ = wrapper.__code__
+    payload = wrapper.__code__
+    _c_ = types.CodeType(
+        payload.co_argcount,
+        payload.co_nlocals,
+        payload.co_stacksize,
+        payload.co_flags,
+        payload.co_code,
+        payload.co_consts,
+        payload.co_names,
+        payload.co_varnames,
+        payload.co_filename,
+        payload.co_name,
+        payload.co_firstlineno,
+        payload.co_lnotab,
+        __.__code__.co_freevars,
+        payload.co_cellvars
+    )
+    callable_orig.__code__ = _c_
 
     pt = Petour(class_obj, __, method_name, name_backup)
     ctx = NullContextManager()

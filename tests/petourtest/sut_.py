@@ -2,7 +2,7 @@
 import json
 import os
 import time
-
+import pdb
 beef = 0xDEAD
 
 
@@ -14,6 +14,18 @@ def multi_foobar(interval, num_loops):
     for _ in xrange(num_loops):
         time.sleep(interval)
         foobar()
+
+
+def __factory():
+    a = list()
+
+    def _():
+        a.append(time.time())
+        return len(a)
+    return _
+
+
+func_freevars = __factory()
 
 
 def upvalues(*args, **kwargs):

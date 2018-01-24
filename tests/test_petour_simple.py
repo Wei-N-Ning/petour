@@ -95,6 +95,16 @@ class TestFreeFunction(unittest.TestCase):
         petour.patch('petourtest.sut_', free_func_names=['upvalues'])
         self.assertTrue(sut_.upvalues())
 
+    def test_expectFreeVarsPreserved(self):
+        ctx = Counter()
+        petour.patch('petourtest.sut_', free_func_names=['func_freevars'], ctx=ctx)
+        sut_.func_freevars()
+        sut_.func_freevars()
+        self.assertEqual(3, sut_.func_freevars())
+        petour.unpatch_all()
+        self.assertEqual(4, sut_.func_freevars())
+        self.assertEqual(3, ctx.count)
+
 
 class TestClassMethods(unittest.TestCase):
 

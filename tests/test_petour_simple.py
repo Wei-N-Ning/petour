@@ -87,6 +87,14 @@ class TestFreeFunction(unittest.TestCase):
         self.assertAlmostEqual(15.0, sut_.compute(10, 20))
         self.assertAlmostEqual(31.0, sut_.compute(10, 20, c=2.0, mm='abc'))
 
+    def test_expectUpvaluesPreserved(self):
+        """
+        If a function uses other "upvalues" (global variable, public classes, imported symbols etc.) these upvalues
+         need to be available when the wrapper runs
+        """
+        petour.patch('petourtest.sut_', free_func_names=['upvalues'])
+        self.assertTrue(sut_.upvalues())
+
 
 class TestClassMethods(unittest.TestCase):
 
@@ -160,6 +168,10 @@ class TestClassMethods(unittest.TestCase):
         petour.patch('petourtest.sut_', class_dot_methods=['FooBar.count'])
         self.assertAlmostEqual(5, FooBar().compute(10, 20))
         self.assertAlmostEqual(21, FooBar().compute(10, 20, c=2.0, mm='abc'))
+
+    def test_expectUpvaluesPreserved(self):
+        petour.patch('petourtest.sut_', class_dot_methods=['FooBar.upvalues'])
+        self.assertTrue(FooBar().upvalues())
 
 
 class TestNonCallableTypes(unittest.TestCase):

@@ -8,6 +8,7 @@ import weakref
 # (dot-path, symbol) : (petour-obj, contextManager)
 __petours = dict()
 __mapping = dict()
+__globals = dict()
 
 
 class NullContextManager(object):
@@ -47,9 +48,13 @@ def _patch_free_func(module_obj, free_function_name):
     if hasattr(module_obj, name_backup):
         return
 
-    __ = lambda(x): None
-    __.__code__ = copy.deepcopy(callable_orig.func_code)
-    __.__defaults__ = callable_orig.__defaults__
+    __ = types.FunctionType(
+        copy.deepcopy(callable_orig.__code__),
+        callable_orig.__globals__,
+        callable_orig.__name__,
+        callable_orig.__defaults__,
+        callable_orig.__closure__
+    )
     setattr(module_obj, name_backup, __)
 
     def wrapper(*args, **kwargs):
@@ -78,14 +83,18 @@ def _patch_method(module_obj, class_dot_method):
     if not isinstance(method_obj, types.UnboundMethodType):
         return
 
-    callable_obj = method_obj.im_func
+    callable_orig = method_obj.im_func
 
     if hasattr(class_obj, name_backup):
         return
 
-    __ = lambda(x): None
-    __.__code__ = copy.deepcopy(callable_obj.__code__)
-    __.__defaults__ = callable_obj.__defaults__
+    __ = types.FunctionType(
+        copy.deepcopy(callable_orig.__code__),
+        callable_orig.__globals__,
+        callable_orig.__name__,
+        callable_orig.__defaults__,
+        callable_orig.__closure__
+    )
     setattr(class_obj, name_backup, __)
 
     def wrapper(*args, **kwargs):
@@ -97,7 +106,7 @@ def _patch_method(module_obj, class_dot_method):
         with ctx:
             return f(*args, **kwargs)
 
-    callable_obj.__code__ = wrapper.__code__
+    callable_orig.__code__ = wrapper.__code__
 
     pt = Petour(class_obj, __, method_name, name_backup)
     ctx = NullContextManager()
@@ -106,7 +115,7 @@ def _patch_method(module_obj, class_dot_method):
     return record
 
 
-def patch(module_dot_path, free_func_names=None, class_dot_methods=None):
+def patch(module_dot_path, free_func_names=None, class_dot_methods=None, ctx=None):
     """
     Use this function to monkey-patch a free-function or method, adding
     a profiler hook to it.
@@ -126,6 +135,7 @@ def patch(module_dot_path, free_func_names=None, class_dot_methods=None):
         module_dot_path (str):
         free_func_names (list):
         class_dot_methods (list):
+        ctx: (optional) a context manager; if not provided, a NullContextManager is created
 
     """
 
@@ -137,11 +147,15 @@ def patch(module_dot_path, free_func_names=None, class_dot_methods=None):
             r = _patch_free_func(module_obj, free_func_name)
             if r:
                 __petours[(module_dot_path, free_func_name)] = r
+                if ctx is not None:
+                    r[1] = ctx
     if class_dot_methods:
         for class_dot_method in class_dot_methods:
             r = _patch_method(module_obj, class_dot_method)
             if r:
                 __petours[(module_dot_path, class_dot_method)] = r
+                if ctx is not None:
+                    r[1] = ctx
 
 
 def _unpatch(pt):

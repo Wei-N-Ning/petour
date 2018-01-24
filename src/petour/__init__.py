@@ -43,8 +43,6 @@ def _patch_free_func(module_obj, free_function_name):
     callable_orig = getattr(module_obj, free_function_name)
     if hasattr(module_obj, name_backup):
         return
-    else:
-        setattr(module_obj, name_backup, True)
 
     __ = lambda(x): None
     __.__code__ = copy.deepcopy(callable_orig.func_code)
@@ -72,15 +70,18 @@ def _patch_method(module_obj, class_dot_method):
     class_name, method_name = class_dot_method.split('.')
     name_backup = '{}__orig__'.format(method_name)
     class_obj = getattr(module_obj, class_name)
+    method_obj = getattr(class_obj, method_name)
+    if not isinstance(method_obj, types.UnboundMethodType):
+        return
+
+    callable_obj = method_obj.im_func
+
     if hasattr(class_obj, name_backup):
         return
-    else:
-        setattr(class_obj, name_backup, True)
-
-    callable_orig = getattr(class_obj, method_name)
 
     __ = lambda(x): None
-    __.__code__ = copy.deepcopy(callable_orig.__code__)
+    __.__code__ = copy.deepcopy(callable_obj.__code__)
+    setattr(class_obj, name_backup, __)
 
     def wrapper(*args, **kwargs):
         import sys
@@ -91,7 +92,7 @@ def _patch_method(module_obj, class_dot_method):
         with ctx:
             return f(*args, **kwargs)
 
-    callable_orig.__code__ = wrapper.__code__
+    callable_obj.__code__ = wrapper.__code__
 
     pt = Petour(class_obj, __, method_name, name_backup)
     ctx = NullContextManager()
@@ -152,7 +153,10 @@ def _unpatch(pt):
     if func_obj is None:
         return
     f = getattr(owner_obj, pt.name_orig)
-    f.__code__ = func_obj.__code__
+    if isinstance(f, types.UnboundMethodType):
+        f.im_func.__code__ = func_obj.__code__
+    else:
+        f.__code__ = func_obj.__code__
     delattr(owner_obj, pt.name_backup)
 
 

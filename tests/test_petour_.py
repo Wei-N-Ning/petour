@@ -77,6 +77,53 @@ class TestClassMethods(unittest.TestCase):
         petour.patch('petourtest.sut_', class_dot_methods=['FooBar.count'])
         self.assertEqual(1, len(petour.petours()))
 
+    def test_unpatchAll_expectNoPetourCount(self):
+        petour.patch('petourtest.sut_', class_dot_methods=['FooBar.count'])
+        petour.unpatch_all()
+        self.assertFalse(petour.petours())
+
+    def test_expectDefaultContextManagerObject(self):
+        petour.patch('petourtest.sut_', class_dot_methods=['FooBar.count'])
+        _, ctx = petour.petour('petourtest.sut_', 'FooBar.count')
+        self.assertTrue(ctx)
+
+    def test_overrideContextManager_expectInvoked(self):
+        petour.patch('petourtest.sut_', class_dot_methods=['FooBar.count'])
+        ctx = Counter()
+        petour.set_context_manager('petourtest.sut_', 'FooBar.count', ctx)
+        FooBar().count()
+        sut_.FooBar().count()
+        self.assertEqual(2, ctx.count)
+
+    def test_callPatchedInstanceMethod_expectInstanceAccessRestriction(self):
+        """
+        This is very important:
+
+        A patched instance method should still be an instance method, which
+        must be called from the instance not the class
+
+        The following two test methods are to verify the access mode when
+         a class-method and a static-method is patched
+        """
+        petour.patch('petourtest.sut_', class_dot_methods=['FooBar.count'])
+        self.assertRaises(TypeError, sut_.FooBar.count)
+
+    def test_callPatchedClassMethod_expectClassAccess(self):
+        petour.patch('petourtest.sut_', class_dot_methods=['FooBar.kls_count'])
+        self.assertEqual(11, sut_.FooBar.kls_count(10))
+
+    def test_callPatchedStaticMethod_expectClassAccess(self):
+        petour.patch('petourtest.sut_', class_dot_methods=['FooBar.sta_count'])
+        self.assertEqual(101, sut_.FooBar.sta_count('abc'))
+
+    def test_unpatchAll_expectContextManagerNotInvoked(self):
+        petour.patch('petourtest.sut_', class_dot_methods=['FooBar.kls_count'])
+        ctx = Counter()
+        petour.unpatch_all()
+        FooBar.kls_count(11)
+        sut_.FooBar.kls_count(111)
+        self.assertEqual(0, ctx.count)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -38,6 +38,10 @@ def compute(a, b, c=1.0, d=2.0, **kwargs):
     return (a + b) * c / d + len(kwargs)
 
 
+def render(w, h, rate=1.0):
+    return True
+
+
 def sleep_in_loop(interval, num_loops):
     for _ in xrange(num_loops):
         time.sleep(interval)

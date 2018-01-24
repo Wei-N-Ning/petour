@@ -39,7 +39,28 @@ def get_callable(codeObj):
     return __mapping[codeObj]
 
 
+def copy_func(f, name=None):
+    """
+
+    Args:
+        f (types.FunctionType):
+        name (str):
+
+    Returns:
+        types.FunctionType:
+    """
+    return types.FunctionType(
+        f.func_code,
+        f.func_globals,
+        name or f.func_name,
+        f.func_defaults,
+        f.func_closure
+    )
+
+
 def _patch_free_func(module_obj, free_function_name):
+    uniqueId = str(hash((module_obj, free_function_name)))
+
     name_backup = '{}__orig__'.format(free_function_name)
     callable_orig = getattr(module_obj, free_function_name)
     if not isinstance(callable_orig, types.FunctionType):
@@ -48,26 +69,20 @@ def _patch_free_func(module_obj, free_function_name):
     if hasattr(module_obj, name_backup):
         return
 
-    __ = types.FunctionType(
-        copy.deepcopy(callable_orig.__code__),
-        callable_orig.__globals__,
-        callable_orig.__name__,
-        callable_orig.__defaults__,
-        callable_orig.__closure__
-    )
-    setattr(module_obj, name_backup, __)
+    callable_backup = copy_func(callable_orig)
+    setattr(module_obj, name_backup, callable_backup)
 
     def wrapper(*args, **kwargs):
         import sys
         import inspect
         fr = inspect.currentframe()
-        pt, ctx = sys.modules['petour'].get_callable(fr.f_code)
+        pt, ctx = sys.modules['petour'].get_callable(fr.f_code.co_name)
         f = pt.func_obj()
         with ctx:
             return f(*args, **kwargs)
 
     payload = wrapper.__code__
-    _c_ = types.CodeType(
+    code_patched = types.CodeType(
         payload.co_argcount,
         payload.co_nlocals,
         payload.co_stacksize,
@@ -77,22 +92,25 @@ def _patch_free_func(module_obj, free_function_name):
         payload.co_names,
         payload.co_varnames,
         payload.co_filename,
-        payload.co_name,
+        uniqueId,
         payload.co_firstlineno,
         payload.co_lnotab,
-        __.__code__.co_freevars,
+        callable_orig.__code__.co_freevars,
         payload.co_cellvars
     )
-    callable_orig.__code__ = _c_
+    callable_orig.__code__ = code_patched
 
-    pt = Petour(module_obj, __, free_function_name, name_backup)
+    pt = Petour(module_obj, callable_backup, free_function_name, name_backup)
     ctx = NullContextManager()
     record = [pt, ctx]
-    __mapping[_c_] = record
+
+    __mapping[uniqueId] = record
     return record
 
 
 def _patch_method(module_obj, class_dot_method):
+    uniqueId = str(hash((module_obj, class_dot_method)))
+
     class_name, method_name = class_dot_method.split('.')
     name_backup = '{}__orig__'.format(method_name)
     class_obj = getattr(module_obj, class_name)
@@ -118,13 +136,13 @@ def _patch_method(module_obj, class_dot_method):
         import sys
         import inspect
         fr = inspect.currentframe()
-        pt, ctx = sys.modules['petour'].get_callable(fr.f_code)
+        pt, ctx = sys.modules['petour'].get_callable(fr.f_code.co_name)
         f = pt.func_obj()
         with ctx:
             return f(*args, **kwargs)
 
     payload = wrapper.__code__
-    _c_ = types.CodeType(
+    code_patched = types.CodeType(
         payload.co_argcount,
         payload.co_nlocals,
         payload.co_stacksize,
@@ -134,18 +152,18 @@ def _patch_method(module_obj, class_dot_method):
         payload.co_names,
         payload.co_varnames,
         payload.co_filename,
-        payload.co_name,
+        uniqueId,
         payload.co_firstlineno,
         payload.co_lnotab,
         __.__code__.co_freevars,
         payload.co_cellvars
     )
-    callable_orig.__code__ = _c_
+    callable_orig.__code__ = code_patched
 
     pt = Petour(class_obj, __, method_name, name_backup)
     ctx = NullContextManager()
     record = [pt, ctx]
-    __mapping[_c_] = record
+    __mapping[uniqueId] = record
     return record
 
 

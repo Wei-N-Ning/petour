@@ -2,3 +2,6 @@
 build
 *pyc
 *~
+.lock-waf_linux2_build
+wscript*
+

@@ -7,6 +7,10 @@ def foobar(*args, **kwargs):
     return len(args) + len(kwargs)
 
 
+def compute(a, b, c=1.0, d=2.0, **kwargs):
+    return (a + b) * c / d + len(kwargs)
+
+
 class FooBar(object):
 
     IDDQD = 'IDKFA'
@@ -16,6 +20,9 @@ class FooBar(object):
 
     def count(self, *args, **kwargs):
         return self.num + len(args) + len(kwargs)
+
+    def compute(self, a, b, c=1.0, d=2.0, **kwargs):
+        return (a + b) * c / d + len(kwargs) + self.num
 
     @classmethod
     def kls_count(cls, *args, **kwargs):

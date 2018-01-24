@@ -49,6 +49,7 @@ def _patch_free_func(module_obj, free_function_name):
 
     __ = lambda(x): None
     __.__code__ = copy.deepcopy(callable_orig.func_code)
+    __.__defaults__ = callable_orig.__defaults__
     setattr(module_obj, name_backup, __)
 
     def wrapper(*args, **kwargs):
@@ -84,6 +85,7 @@ def _patch_method(module_obj, class_dot_method):
 
     __ = lambda(x): None
     __.__code__ = copy.deepcopy(callable_obj.__code__)
+    __.__defaults__ = callable_obj.__defaults__
     setattr(class_obj, name_backup, __)
 
     def wrapper(*args, **kwargs):

@@ -79,6 +79,14 @@ class TestFreeFunction(unittest.TestCase):
         ctx = petour.context_manager('petourtest.sut_', 'foobar')
         self.assertFalse(ctx)
 
+    def test_expectFunctionSignaturePreserved(self):
+        """
+        function's default argument list is preserved
+        """
+        petour.patch('petourtest.sut_', free_func_names=['compute'])
+        self.assertAlmostEqual(15.0, sut_.compute(10, 20))
+        self.assertAlmostEqual(31.0, sut_.compute(10, 20, c=2.0, mm='abc'))
+
 
 class TestClassMethods(unittest.TestCase):
 
@@ -147,6 +155,11 @@ class TestClassMethods(unittest.TestCase):
         self.assertEqual(0, len(petour.petours()))
         ctx = petour.context_manager('petourtest.sut_', 'FooBar.count')
         self.assertFalse(ctx)
+
+    def test_expectMethodSignaturePreserved(self):
+        petour.patch('petourtest.sut_', class_dot_methods=['FooBar.count'])
+        self.assertAlmostEqual(5, FooBar().compute(10, 20))
+        self.assertAlmostEqual(21, FooBar().compute(10, 20, c=2.0, mm='abc'))
 
 
 class TestNonCallableTypes(unittest.TestCase):

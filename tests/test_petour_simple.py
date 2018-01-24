@@ -183,6 +183,14 @@ class TestClassMethods(unittest.TestCase):
         petour.patch('petourtest.sut_', class_dot_methods=['FooBar.upvalues'])
         self.assertTrue(FooBar().upvalues())
 
+    def test_expectFreeVarsPreserved(self):
+        petour.patch('petourtest.sut_', class_dot_methods=['FooBar.meth_freevars'])
+        _ = FooBar()
+        _.meth_freevars()
+        _.meth_freevars()
+        _.meth_freevars()
+        self.assertEqual(3, _.meth_freevars_calls())
+
 
 class TestNonCallableTypes(unittest.TestCase):
     """

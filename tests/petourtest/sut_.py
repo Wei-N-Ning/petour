@@ -2,7 +2,6 @@
 import json
 import os
 import time
-import pdb
 beef = 0xDEAD
 
 
@@ -44,6 +43,17 @@ def sleep_in_loop(interval, num_loops):
         time.sleep(interval)
 
 
+def _counter(f):
+    c = list()
+
+    def _(*args, **kwargs):
+        c.append(0)
+        return f(*args, **kwargs)
+
+    _counter.c = c
+    return _
+
+
 class FooBar(object):
 
     IDDQD = 'IDKFA'
@@ -70,3 +80,10 @@ class FooBar(object):
     @staticmethod
     def sta_count(*args, **kwargs):
         return 100 + len(args) + len(kwargs)
+
+    @_counter
+    def meth_freevars(self):
+        pass
+
+    def meth_freevars_calls(self):
+        return len(_counter.c)

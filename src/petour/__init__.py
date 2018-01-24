@@ -145,7 +145,7 @@ def _patch_method(module_obj, class_dot_method):
     pt = Petour(class_obj, __, method_name, name_backup)
     ctx = NullContextManager()
     record = [pt, ctx]
-    __mapping[wrapper.__code__] = record
+    __mapping[_c_] = record
     return record
 
 

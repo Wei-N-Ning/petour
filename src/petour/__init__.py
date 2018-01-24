@@ -41,6 +41,9 @@ def get_callable(codeObj):
 def _patch_free_func(module_obj, free_function_name):
     name_backup = '{}__orig__'.format(free_function_name)
     callable_orig = getattr(module_obj, free_function_name)
+    if not isinstance(callable_orig, types.FunctionType):
+        return
+
     if hasattr(module_obj, name_backup):
         return
 

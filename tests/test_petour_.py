@@ -67,6 +67,18 @@ class TestFreeFunction(unittest.TestCase):
         sut_.foobar()
         self.assertEqual(0, ctx.count)
 
+    def test_patchTwice_expectNoSideEffect(self):
+        petour.patch('petourtest.sut_', free_func_names=['foobar'])
+        petour.patch('petourtest.sut_', free_func_names=['foobar'])
+        self.assertEqual(1, len(petour.petours()))
+        self.assertEqual(1, foobar(1))
+        ctx = petour.context_manager('petourtest.sut_', 'foobar')
+        self.assertTrue(ctx)
+        petour.unpatch_all()
+        self.assertEqual(0, len(petour.petours()))
+        ctx = petour.context_manager('petourtest.sut_', 'foobar')
+        self.assertFalse(ctx)
+
 
 class TestClassMethods(unittest.TestCase):
 
@@ -123,6 +135,35 @@ class TestClassMethods(unittest.TestCase):
         FooBar.kls_count(11)
         sut_.FooBar.kls_count(111)
         self.assertEqual(0, ctx.count)
+
+    def test_patchTwice_expectNoSideEffect(self):
+        petour.patch('petourtest.sut_', class_dot_methods=['FooBar.count'])
+        petour.patch('petourtest.sut_', class_dot_methods=['FooBar.count'])
+        self.assertEqual(1, len(petour.petours()))
+        self.assertEqual(1, foobar(1))
+        ctx = petour.context_manager('petourtest.sut_', 'FooBar.count')
+        self.assertTrue(ctx)
+        petour.unpatch_all()
+        self.assertEqual(0, len(petour.petours()))
+        ctx = petour.context_manager('petourtest.sut_', 'FooBar.count')
+        self.assertFalse(ctx)
+
+
+class TestNonCallableTypes(unittest.TestCase):
+    """
+    Non-callable types are not supported atm
+    """
+
+    def tearDown(self):
+        petour.unpatch_all()
+
+    def test_canNotPatchStaticVariable(self):
+        petour.patch('petourtest.sut_', free_func_names=['beef'])
+        self.assertFalse(petour.petours())
+
+    def test_canNotPatchClassAttribute(self):
+        petour.patch('petourtest.sut_', class_dot_methods=['FooBar.IDDQD'])
+        self.assertFalse(petour.petours())
 
 
 if __name__ == '__main__':

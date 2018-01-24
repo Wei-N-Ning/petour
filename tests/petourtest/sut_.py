@@ -1,10 +1,15 @@
 
 
+beef = 0xDEAD
+
+
 def foobar(*args, **kwargs):
     return len(args) + len(kwargs)
 
 
 class FooBar(object):
+
+    IDDQD = 'IDKFA'
 
     def __init__(self):
         self.num = -10

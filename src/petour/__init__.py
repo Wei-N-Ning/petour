@@ -1,3 +1,10 @@
+"""
+Example of a payload:
+
+payload = [0x1, 0x2, 0x3]
+with open('.../...', 'wb') as fp:
+    fp.write(bytearray(payload))
+"""
 
 import copy
 import sys

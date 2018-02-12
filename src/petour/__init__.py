@@ -88,6 +88,7 @@ def _patch_free_func(module_obj, free_function_name):
         fr = inspect.currentframe()
         pt, ctx = sys.modules['petour'].get_callable(fr.f_code.co_name)
         f = pt.func_obj()
+        ctx.parse_args(*args, **kwargs)
         with ctx:
             return f(*args, **kwargs)
 

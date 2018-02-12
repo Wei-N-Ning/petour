@@ -14,7 +14,7 @@ class TestPatchFFIFunction(unittest.TestCase):
         petour.unpatch_all()
 
     def test_(self):
-        self.m.foobar_ff = None
+        self.m.foobar_iff = None
 
 
 if __name__ == '__main__':

@@ -15,6 +15,9 @@ class Counter(object):
     def __init__(self):
         self.count = 0
 
+    def parse_args(self, *args, **kargs):
+        return self
+
     def __enter__(self):
         self.count += 1
 
@@ -207,6 +210,30 @@ class TestNonCallableTypes(unittest.TestCase):
     def test_canNotPatchClassAttribute(self):
         petour.patch('petourtest.sut_', class_dot_methods=['FooBar.IDDQD'])
         self.assertFalse(petour.petours())
+
+
+class TestGracefulHandlingNonExistingSymbol(unittest.TestCase):
+
+    def tearDown(self):
+        petour.unpatch_all()
+
+    def test_nonExistingPackage(self):
+        self.assertFalse(petour.patch('doom2.level', free_func_names=['beef']))
+
+    def test_nonExistingModule(self):
+        self.assertFalse(petour.patch('petourtest.level', free_func_names=['beef']))
+
+    def test_nonExistingFreeFuncs(self):
+        self.assertFalse(petour.patch('petourtest.sut_', free_func_names=['foo2bar']))
+
+    def test_nonExistingClass(self):
+        self.assertFalse(petour.patch('petourtest.sut_', class_dot_methods=['Foo2Bar.count']))
+
+    def test_nonExistingMethod(self):
+        self.assertFalse(petour.patch('petourtest.sut_', class_dot_methods=['FooBar.Count']))
+
+    def test_nonExistingNonCallable(self):
+        self.assertFalse(petour.patch('petourtest.sut_', class_dot_methods=['FooBar.IDNOCLIP']))
 
 
 if __name__ == '__main__':

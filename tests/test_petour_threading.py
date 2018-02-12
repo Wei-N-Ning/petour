@@ -16,6 +16,9 @@ class Counter(object):
     def __init__(self):
         self.count = 0
 
+    def parse_args(self, *args, **kargs):
+        return self
+
     def __enter__(self):
         self.count += 1
 

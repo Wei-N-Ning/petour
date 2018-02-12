@@ -20,6 +20,9 @@ __globals = dict()
 
 class NullContextManager(object):
 
+    def parse_args(self, *args, **kargs):
+        return self
+
     def __enter__(self):
         pass
 
@@ -69,7 +72,7 @@ def _patch_free_func(module_obj, free_function_name):
     uniqueId = str(hash((module_obj, free_function_name)))
 
     name_backup = '{}__orig__'.format(free_function_name)
-    callable_orig = getattr(module_obj, free_function_name)
+    callable_orig = getattr(module_obj, free_function_name, None)
     if not isinstance(callable_orig, types.FunctionType):
         return
 
@@ -120,8 +123,8 @@ def _patch_method(module_obj, class_dot_method):
 
     class_name, method_name = class_dot_method.split('.')
     name_backup = '{}__orig__'.format(method_name)
-    class_obj = getattr(module_obj, class_name)
-    method_obj = getattr(class_obj, method_name)
+    class_obj = getattr(module_obj, class_name, None)
+    method_obj = getattr(class_obj, method_name, None)
     if not isinstance(method_obj, types.UnboundMethodType):
         return
 
@@ -145,6 +148,7 @@ def _patch_method(module_obj, class_dot_method):
         fr = inspect.currentframe()
         pt, ctx = sys.modules['petour'].get_callable(fr.f_code.co_name)
         f = pt.func_obj()
+        ctx.parse_args(*args, **kwargs)
         with ctx:
             return f(*args, **kwargs)
 
@@ -174,6 +178,13 @@ def _patch_method(module_obj, class_dot_method):
     return record
 
 
+def _get_imported_module(module_dot_path):
+    if module_dot_path in ('__builtins__', '__builtin__'):
+        module_dot_path = '__builtin__'
+    module_obj = sys.modules.get(module_dot_path)
+    return module_obj
+
+
 def patch(module_dot_path, free_func_names=None, class_dot_methods=None, ctx=None):
     """
     Use this function to monkey-patch a free-function or method, adding
@@ -196,25 +207,36 @@ def patch(module_dot_path, free_func_names=None, class_dot_methods=None, ctx=Non
         class_dot_methods (list):
         ctx: (optional) a context manager; if not provided, a NullContextManager is created
 
+    Returns:
+        bool: indicating success or failure
     """
 
-    module_obj = sys.modules.get(module_dot_path)
+    module_obj = _get_imported_module(module_dot_path)
     if module_obj is None:
-        module_obj = __import__(module_dot_path, fromlist=[''])
+        try:
+            module_obj = __import__(module_dot_path, fromlist=[''])
+        except ImportError, e:
+            return False
     if free_func_names:
+        counter = 0
         for free_func_name in free_func_names:
             r = _patch_free_func(module_obj, free_func_name)
             if r:
                 __petours[(module_dot_path, free_func_name)] = r
                 if ctx is not None:
                     r[1] = ctx
+                counter += 1
+        return bool(counter)
     if class_dot_methods:
+        counter = 0
         for class_dot_method in class_dot_methods:
             r = _patch_method(module_obj, class_dot_method)
             if r:
                 __petours[(module_dot_path, class_dot_method)] = r
                 if ctx is not None:
                     r[1] = ctx
+                counter += 1
+        return bool(counter)
 
 
 def _unpatch(pt):
